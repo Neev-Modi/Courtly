@@ -1,0 +1,15 @@
+:root {
+  color-scheme: light;
+  --color-bg: #fafbf8;
+  --color-surface: #fff;
+  --color-ink: #243a30;
+  --color-muted: #737d76;
+  --color-primary: #286246;
+  --color-primary-hover: #1b4b34;
+  --color-border: #e4e8df;
+  --color-soft: #eef3e9;
+  --radius-lg: 24px;
+  --radius-md: 12px;
+  --font-body: 'Segoe UI', Arial, sans-serif;
+  --shadow-card: 0 18px 65px #213e2910;
+}

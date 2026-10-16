@@ -1,0 +1,27 @@
+{
+  "name": "courtly",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "app",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,blue \"npm run dev -w server\" \"npm run dev -w app\"",
+    "build": "npm run build -w app",
+    "start": "npm start -w server",
+    "test": "npm test -w server",
+    "test:integration": "npm run test:integration -w server",
+    "demo": "npm run build && npm run demo -w server",
+    "db:migrate": "npm run db:migrate -w server",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.9.9"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
