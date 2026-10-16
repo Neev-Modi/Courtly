@@ -109,6 +109,7 @@ export function createBookingsService(pool, config, clock = () => new Date()) {
           deadline = new Date(Math.min(+now + bookingPolicy.confirmationMinutes * 60000, +start));
         await repo.insert(id, courtId, actor.id, start, end, deadline, now);
         for (const player of players) await repo.addPlayer(id, player.id, actor.id, now);
+        // Event outbox: Future email worker consumes 'booking.created' to dispatch invitation emails.
         await recordEvent(client, 'booking.created', id, {
           actorId: actor.id,
           playerIds: ids,
@@ -157,12 +158,14 @@ export function createBookingsService(pool, config, clock = () => new Date()) {
         await repo.respond(id, actor.id, data.status, now);
         if (data.status === 'declined') {
           await repo.cancel(id, actor.id, 'An invited player declined.', now);
+          // Event outbox: Future email worker sends decline notification to organizer and players.
           await recordEvent(client, 'booking.cancelled', id, {
             actorId: actor.id,
             reason: 'participant_declined',
           });
         } else if (players.every((p) => p.id === actor.id || p.status === 'confirmed')) {
           await repo.confirm(id, now);
+          // Event outbox: Future email worker sends match confirmation notice to all participants.
           await recordEvent(client, 'booking.confirmed', id, { actorId: actor.id });
         }
         await recordEvent(client, 'booking.responded', id, {
@@ -191,6 +194,7 @@ export function createBookingsService(pool, config, clock = () => new Date()) {
         )
           fail('Players can cancel only at least one hour before the start.');
         await repo.cancel(id, actor.id, reason, now);
+        // Event outbox: Future email worker sends cancellation notice with reason to participants.
         await recordEvent(client, 'booking.cancelled', id, { actorId: actor.id, reason });
         return { id, status: 'cancelled' };
       });
