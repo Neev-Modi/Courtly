@@ -103,7 +103,7 @@ export function BookingsPage({ admin = false }) {
           <RefreshCw size={16} />
           Refresh
         </button>
-        <span className={styles.muted}>Invitations are delivered here, without email.</span>
+        <span className={styles.muted}>View and respond to your invitations here.</span>
       </section>
       {error && (
         <p className={styles.error} role="alert">

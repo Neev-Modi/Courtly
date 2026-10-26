@@ -7,3 +7,5 @@ coverage/
 *.log
 artifacts/
 .npm-cache/
+cleardb.js
+clear-db.js

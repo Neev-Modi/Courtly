@@ -2,6 +2,7 @@
   "name": "courtly",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "workspaces": [
     "app",
     "server"
@@ -14,8 +15,15 @@
     "test:integration": "npm run test:integration -w server",
     "demo": "npm run build && npm run demo -w server",
     "db:migrate": "npm run db:migrate -w server",
+    "db:clear": "node clear-db.js",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "mail:preview": "npm run mail:preview -w server",
+    "mail:verify": "npm run mail:verify -w server",
+    "mail:send": "npm run mail:send -w server",
+    "mail:worker": "npm run mail:worker -w server",
+    "mail:status": "npm run mail:status -w server",
+    "test:mail": "npm run test:mail -w server"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

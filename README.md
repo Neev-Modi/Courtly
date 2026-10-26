@@ -1,6 +1,6 @@
 # Courtly · Campus badminton
 
-Court and booking management is now implemented: court administration, maintenance blocks, slot availability, in-app invitations, confirmation, cancellation and history. See [module guide and working demo](docs/courts-bookings.md). Run `npm.cmd run demo` for an isolated interactive demonstration with sample users. Email and cron services are intentionally not implemented.
+Court and booking management is implemented: court administration, maintenance blocks, slot availability, in-app invitations, confirmation, cancellation and history. See [module guide and working demo](docs/courts-bookings.md). Run `npm.cmd run demo` for an isolated interactive demonstration with sample users. Optional mail delivery is available through a separate worker; cron jobs are not implemented.
 
 Modular authentication and authorization for the Badminton Court Management System. The secondary OOPS-Project-final directory is a read-only prototype; all implementation lives in this primary workspace.
 
@@ -16,7 +16,7 @@ Requires Node.js 22.13+ and a running PostgreSQL 14+ server.
 6. Keep `PORT=8080`, `APP_ORIGIN=http://localhost:5173`, `API_ORIGIN=http://localhost:8080`, and `GOOGLE_CALLBACK_URL=http://localhost:8080/auth/google/callback`.
 7. Create the database if it does not already exist, run the schema command, then start the app as shown below.
 
-`MAIL_*` and `APP_SIGNING_SECRET` may remain in your `.env`; this module ignores them. No mail credentials or additional API keys are required. Optional `ADMIN_EMAILS` grants administrator access to matching verified Google identities **only at their first signup**. Campus access defaults to `nitw.ac.in`.
+Authentication does not require mail credentials. The separate mail worker uses `MAIL_*` settings when `MAIL_MODE=smtp`; see [Mail Policy.md](./Mail%20Policy.md). `APP_SIGNING_SECRET` is unused. Optional `ADMIN_EMAILS` grants administrator access to matching verified Google identities **only at their first signup**. Campus access defaults to `nitw.ac.in`.
 
 ## Commands (from the project root)
 
@@ -61,7 +61,7 @@ If you already ran the previous schema, run `npm.cmd run db:migrate` again: it a
 - Authorization policies live in a separate module. `account:read` allows users and administrators; `admin:access` allows only administrators. Unknown roles and permissions are denied.
 - Same-origin checks protect refresh/logout. Sign-in is rate limited.
 
-Sign-up happens on the first successful Google sign-in. Court booking, invitations, court administration and maintenance are available. Password login/reset, email delivery, and scheduled jobs remain outside this increment. The frontend is responsive and light-only.
+Sign-up happens on the first successful Google sign-in. Court booking, invitations, court administration, maintenance and optional email delivery are available. Password login/reset and scheduled jobs remain outside this increment. The frontend is responsive and light-only.
 
 ## Structure
 
@@ -115,3 +115,7 @@ npm.cmd run format:check
 Tests use a mocked Google provider and in-memory repository and exercise actual HTTP routes. Live Google consent and real PostgreSQL connectivity require your environment values and are not covered by those mocks.
 
 For deployment, build the frontend, set `NODE_ENV=production`, configure HTTPS origins and the registered callback, then run `npm.cmd start`. The backend also serves the frontend build. Prefer a single HTTPS origin. Configure the exact trusted reverse proxy count using `TRUST_PROXY_HOPS` and verified database TLS when appropriate. The rate limiter is process-local; multiple API instances need a shared limiter store. Sessions and OAuth state already use PostgreSQL.
+
+## Mail module
+
+See [Mail Policy.md](./Mail%20Policy.md) for notification rules, SMTP configuration, delivery guarantees and run commands. Mail uses the existing transactional booking events and a separate PostgreSQL-backed worker. Run `npm run db:migrate` before starting it. Set `MAIL_MODE=smtp` in your own `.env`, then run `npm run mail:worker` in a separate terminal. `npm run mail:preview` uses fictional data and sends nothing; `npm run test:mail` tests delivery using an isolated database schema and fake transport. No cron jobs are included.

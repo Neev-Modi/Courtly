@@ -67,11 +67,9 @@ Invitation responses and cancellations lock the booking row, preventing a last-c
 
 Use ISO timestamps with an explicit timezone; the UI converts IST input. Availability returns free court time, not a guarantee that all supplied participants meet cooldown rules; those checks run atomically when reserving.
 
-## Future email and cron integration
+## Mail and future cron integration
 
-**Neither service is implemented.** The module has no booking timer, cron package, SMTP connection, mail send, or public scheduler endpoint. The existing authentication session cleanup is independent and unchanged.
-
-`modules/events/events.repository.js` writes durable events inside the same database transaction as the change. The `courtly_events` table holds event ID, type, aggregate ID, versioned JSON payload, timestamps and `processed_at`. Events include `booking.created`, `booking.responded`, `booking.confirmed`, `booking.cancelled`, and court lifecycle/maintenance events. A future email worker should claim unprocessed rows with locking, load the booking and recipient IDs, use event ID for idempotency, and mark processed only after successful delivery. Add delivery-attempt/retry metadata in that worker's migration. Existing events are retained; none is consumed or marked delivered now.
+Mail delivery is implemented in a separate worker. See [Mail Policy.md](../Mail%20Policy.md) for configuration and commands. Booking events are expanded transactionally into per-recipient delivery records; event processed_at means expansion completed, while delivery status tracks SMTP acceptance and retries. No cron jobs or public scheduler endpoints are implemented. The authentication session cleanup is unchanged.
 
 Pending expiration and completed status are derived by `effectiveStatus` in `booking.policy.js`; availability/conflict queries use the same deadline semantics. Therefore correctness does not depend on a cron worker. Raw pending records can remain pending in storage after expiry. A future lifecycle worker can query expired deadlines, deduplicate expiry/reminder events and record them through `recordEvent`, without changing reservation endpoints. If persisted expired/completed statuses are desired, add them in a separate schema migration and update the common policy/query predicates together. Workers should call service/repository functions, not anonymous HTTP endpoints. Only expose a future job endpoint if deployment requires one, with separate worker authentication.
 

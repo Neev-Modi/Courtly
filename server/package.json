@@ -9,7 +9,13 @@
     "test": "node --test",
     "db:migrate": "node src/db/migrate.js",
     "test:integration": "node integration/management-check.js",
-    "demo": "node integration/demo.js"
+    "demo": "node integration/demo.js",
+    "mail:preview": "node src/modules/mail/mail.cli.js preview",
+    "mail:verify": "node src/modules/mail/mail.cli.js verify",
+    "mail:send": "node src/modules/mail/mail.cli.js once",
+    "mail:worker": "node src/modules/mail/mail.cli.js worker",
+    "mail:status": "node src/modules/mail/mail.cli.js status",
+    "test:mail": "node integration/mail-check.js"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
@@ -19,6 +25,7 @@
     "google-auth-library": "^9.15.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.2.1",
     "pg": "^8.13.1"
   }
 }
