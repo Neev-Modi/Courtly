@@ -119,3 +119,7 @@ For deployment, build the frontend, set `NODE_ENV=production`, configure HTTPS o
 ## Mail module
 
 See [Mail Policy.md](./Mail%20Policy.md) for notification rules, SMTP configuration, delivery guarantees and run commands. Mail uses the existing transactional booking events and a separate PostgreSQL-backed worker. Run `npm run db:migrate` before starting it. Set `MAIL_MODE=smtp` in your own `.env`, then run `npm run mail:worker` in a separate terminal. `npm run mail:preview` uses fictional data and sends nothing; `npm run test:mail` tests delivery using an isolated database schema and fake transport. No cron jobs are included.
+
+## Admin analysis
+
+Administrators can open **Analysis** at `/admin/analysis` for 13 charts, report summaries, JSON downloads and print/PDF export. Choose Demo, Last Generated, All or Custom (inclusive IST date range). Reports share one JSON format; the server privately stores `demo.json` and `last_generated.json`. See [analysis strategy, metric definitions and run guide](docs/analysis.md). No new environment keys or schema migration are required for this module.

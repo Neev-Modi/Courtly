@@ -24,3 +24,5 @@ router.get(
 Add the permission to the appropriate roles first. For user-owned records, also enforce ownership in that module's service/repository using `req.user.id`; a role check alone does not authorize another user's records. Booking services enforce participant response ownership and organizer/admin cancellation ownership. Courts and all-bookings administration require their own management permissions. See the court and booking module guide.
 
 Administrator bootstrap is restricted to verified emails in `ADMIN_EMAILS` at first sign-in. Existing database roles are preserved. There is no self-service role elevation endpoint. `/api/auth/me` returns public identity and derived permissions; `/api/auth/admin` independently enforces administrator permission.
+
+Analysis requires `analysis:read`, granted only to administrators. Every report mode (including fictional Demo and Last Generated) uses the same protected API. Saved JSON files are private server files, not public static assets. See [analysis documentation](analysis.md).

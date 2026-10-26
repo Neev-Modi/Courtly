@@ -53,6 +53,7 @@ export function AppShell() {
               Manage courts
             </NavLink>
             <NavLink to="/admin/bookings">All bookings</NavLink>
+            <NavLink to="/admin/analysis">Analysis</NavLink>
           </>
         )}
       </nav>

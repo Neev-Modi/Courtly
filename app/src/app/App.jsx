@@ -16,6 +16,9 @@ const ManageCourtsPage = lazy(() =>
 const BookingsPage = lazy(() =>
   import('../features/bookings/BookingsPage').then((module) => ({ default: module.BookingsPage })),
 );
+const AnalysisPage = lazy(() =>
+  import('../features/analysis/AnalysisPage').then((module) => ({ default: module.AnalysisPage })),
+);
 export function App() {
   return (
     <Suspense fallback={<LoadingScreen />}>
@@ -33,6 +36,7 @@ export function App() {
           <Route element={<AppShell />}>
             <Route path="/admin" element={<ManageCourtsPage />} />
             <Route path="/admin/bookings" element={<BookingsPage admin />} />
+            <Route path="/admin/analysis" element={<AnalysisPage />} />
           </Route>
         </Route>
         <Route

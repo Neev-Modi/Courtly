@@ -9,3 +9,5 @@ artifacts/
 .npm-cache/
 cleardb.js
 clear-db.js
+server/data/analysis/last_generated.json
+server/data/analysis/.report-*.tmp

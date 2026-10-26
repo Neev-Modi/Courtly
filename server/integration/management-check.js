@@ -9,6 +9,13 @@ import { createAuthRepository } from '../src/modules/auth/auth.repository.js';
 import { createTokenService } from '../src/modules/auth/token.service.js';
 import { createCourtsService } from '../src/modules/courts/courts.service.js';
 import { createBookingsService } from '../src/modules/bookings/bookings.service.js';
+import { createAnalysisService } from '../src/modules/analysis/analysis.service.js';
+import { createAnalysisRepository } from '../src/modules/analysis/analysis.repository.js';
+import { createAnalysisStore, analysisDirectory } from '../src/modules/analysis/analysis.store.js';
+import { mkdtemp, copyFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+const reportDirectory = await mkdtemp(join(tmpdir(), 'courtly-analysis-integration-'));
 
 const settings = readDatabaseConfig();
 const pool = createPool(settings),
@@ -53,6 +60,7 @@ try {
   await pool.query(`CREATE SCHEMA "${schema}"`);
   await migrateDatabase(isolated);
   await migrateDatabase(isolated);
+  await copyFile(join(analysisDirectory, 'demo.json'), join(reportDirectory, 'demo.json'));
   const authRepo = createAuthRepository(isolated),
     tokens = createTokenService(config);
   for (const name of [
@@ -89,6 +97,11 @@ try {
     config,
     courts: createCourtsService(isolated, clock),
     bookings: createBookingsService(isolated, config, clock),
+    analysis: createAnalysisService(
+      createAnalysisRepository(isolated),
+      createAnalysisStore(reportDirectory),
+      clock,
+    ),
   }).listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -294,6 +307,78 @@ try {
     true,
     'booking events persisted transactionally for future email worker',
   );
+  check(
+    (await call(null, '/analysis/reports', 'POST', { mode: 'demo' })).status,
+    401,
+    'anonymous analytics access denied',
+  );
+  for (const mode of ['demo', 'last_generated', 'all', 'custom'])
+    check(
+      (await call('alice', '/analysis/reports', 'POST', { mode })).status,
+      403,
+      `player cannot load ${mode} analysis`,
+    );
+  check(
+    (await call('admin', '/analysis/reports', 'POST', { mode: 'all' }, 'https://other.example'))
+      .status,
+    403,
+    'analysis enforces same-origin requests',
+  );
+  check(
+    (await call('admin', '/analysis/reports', 'POST', { mode: 'last_generated' })).status,
+    404,
+    'missing last report has actionable response',
+  );
+  check(
+    (await call('admin', '/analysis/reports', 'POST', { mode: 'demo' })).body.report.source,
+    'demo',
+    'administrator can load fictional JSON',
+  );
+  const analysis = await call('admin', '/analysis/reports', 'POST', { mode: 'all' });
+  check(analysis.status, 200, 'administrator generates live report');
+  check(
+    analysis.body.report.summary.totalBookings,
+    (await isolated.query('SELECT count(*)::int AS n FROM courtly_bookings')).rows[0].n,
+    'All report contains every booking',
+  );
+  check(
+    (await call('admin', '/analysis/reports', 'POST', { mode: 'last_generated' })).body.report,
+    analysis.body.report,
+    'last report returns saved JSON exactly',
+  );
+  for (const start of [
+    '2030-10-31T18:29:59Z',
+    '2030-10-31T18:30:00Z',
+    '2030-11-01T18:29:59Z',
+    '2030-11-01T18:30:00Z',
+  ]) {
+    await isolated.query(
+      `INSERT INTO courtly_bookings(id,court_id,creator_id,start_time,end_time,confirmation_deadline)
+      VALUES($1,$2,$3,$4,$5,$6)`,
+      [randomUUID(), court1, users.alice.id, start, new Date(Date.parse(start) + 900000), now],
+    );
+  }
+  const custom = await call('admin', '/analysis/reports', 'POST', {
+    mode: 'custom',
+    from: '2030-11-01',
+    to: '2030-11-01',
+  });
+  check(
+    custom.body.report.summary.totalBookings,
+    2,
+    'Custom includes both IST day boundaries correctly',
+  );
+  check(
+    (
+      await call('admin', '/analysis/reports', 'POST', {
+        mode: 'custom',
+        from: '2030-02-30',
+        to: '2030-03-01',
+      })
+    ).status,
+    400,
+    'invalid calendar dates rejected',
+  );
   console.log(
     `\n${assertions} PostgreSQL + HTTP integration checks passed. No email or scheduler ran.`,
   );
@@ -301,4 +386,5 @@ try {
   if (server) await new Promise((resolve) => server.close(resolve));
   await pool.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   await pool.end();
+  await rm(reportDirectory, { recursive: true, force: true });
 }

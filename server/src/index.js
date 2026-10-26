@@ -6,6 +6,9 @@ import { createAuthService } from './modules/auth/auth.service.js';
 import { createApp } from './app.js';
 import { createCourtsService } from './modules/courts/courts.service.js';
 import { createBookingsService } from './modules/bookings/bookings.service.js';
+import { createAnalysisService } from './modules/analysis/analysis.service.js';
+import { createAnalysisRepository } from './modules/analysis/analysis.repository.js';
+import { createAnalysisStore } from './modules/analysis/analysis.store.js';
 const config = readConfig();
 const pool = createPool(config);
 const repository = createAuthRepository(pool);
@@ -15,6 +18,7 @@ const server = createApp({
   config,
   courts: createCourtsService(pool),
   bookings: createBookingsService(pool, config),
+  analysis: createAnalysisService(createAnalysisRepository(pool), createAnalysisStore()),
 }).listen(config.port, () => {
   console.log(`Courtly API running on http://localhost:${config.port}`);
   if (!config.ready)

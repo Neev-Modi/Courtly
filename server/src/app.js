@@ -8,6 +8,7 @@ import { errorHandler } from './shared/errors.js';
 import { requireAuth, requireSameOrigin } from './modules/auth/auth.middleware.js';
 import { createCourtsRouter } from './modules/courts/courts.routes.js';
 import { createBookingsRouter } from './modules/bookings/bookings.routes.js';
+import { createAnalysisRouter } from './modules/analysis/analysis.routes.js';
 export function createApp(dependencies) {
   const app = express();
   app.disable('x-powered-by');
@@ -27,6 +28,21 @@ export function createApp(dependencies) {
   const authRouter = createAuthRouter(dependencies);
   app.use('/api/auth', authRouter);
   app.use('/auth', authRouter);
+  if (dependencies.analysis) {
+    app.use(
+      '/api/analysis',
+      (req, res, next) => {
+        res.set('Cache-Control', 'no-store');
+        next();
+      },
+      requireAuth(
+        dependencies.service,
+        dependencies.config.production ? '__Host-courtly_access' : 'courtly_access',
+      ),
+      requireSameOrigin(dependencies.config),
+      createAnalysisRouter(dependencies.analysis),
+    );
+  }
   if (dependencies.courts && dependencies.bookings) {
     const authenticate = requireAuth(
       dependencies.service,

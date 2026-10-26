@@ -9,6 +9,7 @@ const rolePermissions = Object.freeze({
     'bookings:create',
     'bookings:read',
     'bookings:manage',
+    'analysis:read',
   ]),
 });
 export const permissionsFor = (role) =>

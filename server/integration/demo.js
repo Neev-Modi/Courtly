@@ -9,6 +9,14 @@ import { createAuthService, hashToken } from '../src/modules/auth/auth.service.j
 import { createTokenService } from '../src/modules/auth/token.service.js';
 import { createCourtsService } from '../src/modules/courts/courts.service.js';
 import { createBookingsService } from '../src/modules/bookings/bookings.service.js';
+import { createAnalysisService } from '../src/modules/analysis/analysis.service.js';
+import { createAnalysisRepository } from '../src/modules/analysis/analysis.repository.js';
+import { createAnalysisStore, analysisDirectory } from '../src/modules/analysis/analysis.store.js';
+import { mkdtemp, copyFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+const reportDirectory = await mkdtemp(join(tmpdir(), 'courtly-demo-reports-'));
+await copyFile(join(analysisDirectory, 'demo.json'), join(reportDirectory, 'demo.json'));
 
 const pool = createPool(readDatabaseConfig());
 const schema = `courtly_demo_${randomBytes(8).toString('hex')}`;
@@ -47,6 +55,7 @@ async function close() {
   if (server) await new Promise((resolve) => server.close(resolve));
   await pool.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   await pool.end();
+  await rm(reportDirectory, { recursive: true, force: true });
 }
 try {
   await pool.query(`CREATE SCHEMA "${schema}"`);
@@ -132,6 +141,10 @@ try {
       service: createAuthService({ repository: repo, provider: {}, config }),
       courts,
       bookings: createBookingsService(db, config),
+      analysis: createAnalysisService(
+        createAnalysisRepository(db),
+        createAnalysisStore(reportDirectory),
+      ),
     }),
   );
   server = outer.listen(4180, '127.0.0.1');
